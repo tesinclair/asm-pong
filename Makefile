@@ -5,9 +5,13 @@ TARGET = main
 SOURCES = src/main.s
 OBJECTS = $(SOURCES:%.s=%.o)
 
-.PHONY: clean all build
-
+.PHONY: clean all build run
+ 
 all: build
+
+run: clean build
+	echo "\n\n"
+	build/a.out
 
 build: $(TARGET)
 	mkdir build/
