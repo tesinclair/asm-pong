@@ -1,4 +1,5 @@
-CC=gcc
+C=nasm
+C_FLAGS= -felf64
 
 TARGET = main
 SOURCES = src/main.s
@@ -10,13 +11,13 @@ all: build
 
 build: $(TARGET)
 	mkdir build/
-	mv $(OBJECTS) $(TARGET) build/
+	mv $(OBJECTS) a.out build/
 
 $(TARGET): $(OBJECTS)
-	$(CC) -o $^ $@
+	ld $^
 
-$(OBJECTS): $(SOURCE)
-	$(CC) -c $^ $@
+$(OBJECTS): $(SOURCES)
+	$(C) $(C_FLAGS) $^
 
 clean:
 	rm -rf build
