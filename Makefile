@@ -1,5 +1,5 @@
 C=nasm
-C_FLAGS= -felf64
+C_FLAGS= -felf64 -g
 
 TARGET = main
 SOURCES = src/main.s
@@ -9,12 +9,13 @@ OBJECTS = $(SOURCES:%.s=%.o)
  
 all: build
 
-run: clean build
+run: build
 	echo "\n\n"
 	build/a.out
 
-build: $(TARGET)
+build: clean $(TARGET)
 	mkdir build/
+	touch build/temp.t
 	mv $(OBJECTS) a.out build/
 
 $(TARGET): $(OBJECTS)
