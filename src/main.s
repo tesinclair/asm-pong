@@ -43,6 +43,11 @@ game_loop:
     mov rdi, 3099
     mov rsi, 1
     call draw_rectangle
+
+    ; ball
+    mov rdi, 1500
+    mov rsi, 100
+    call draw_ball
  
     ; sleep 0.01s
     mov rsi, 10
@@ -116,9 +121,13 @@ draw_ball:
 
     mov r8, BALL_DIAMETER ; Offset
     push rax
-    mov rax, 3
-    idiv r8, rax
+    push rcx
+    mov rax, r8
+    cqo
+    mov rcx, 3
+    idiv rcx
     pop rax
+    pop rcx
     mov r9, r8 ; edge_count
     mov r10, 0 ; edge_index
     mov r11, 0 ; row offset
