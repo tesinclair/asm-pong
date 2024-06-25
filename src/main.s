@@ -126,6 +126,7 @@ draw_ball:
     cqo
     mov rcx, 3
     idiv rcx
+    mov r8, rax
     pop rax
     pop rcx
     mov r9, r8 ; edge_count
@@ -143,6 +144,8 @@ decr_ball_loop:
     push rdi
     add rsi, r11 ; (y_pos + row index)
     add rdi, r8 ; (x_pos + offset index)
+    
+    push r11
 
     mov rax, rsi 
     imul rax, WIDTH ; (y_pos + index) * width
@@ -162,6 +165,8 @@ decr_ball_loop:
 
     call draw_ball_line
 
+    pop r11
+
     pop rdi
     pop rsi
 
@@ -176,6 +181,10 @@ edge_ball_loop:
 
     push rdi
     push rsi
+
+    add rsi, r11
+
+    push r11
 
     mov rax, rsi 
     imul rax, WIDTH ; (y_pos) * width
@@ -193,6 +202,8 @@ edge_ball_loop:
     js exit_failure
 
     call draw_ball_line
+
+    pop r11
 
     pop rsi
     pop rdi
@@ -212,6 +223,8 @@ incr_ball_loop:
     add rsi, r11 ; (y_pos + row index)
     add rdi, r8 ; (x_pos + offset index)
 
+    push r11
+    
     mov rax, rsi 
     imul rax, WIDTH ; (y_pos + index) * width
     add rax, rdi ; ^ + (x_pos + index)
@@ -230,6 +243,8 @@ incr_ball_loop:
 
     call draw_ball_line
 
+    pop r11
+
     pop rdi
     pop rsi
 
@@ -240,7 +255,6 @@ incr_ball_loop:
 
     ret
 
-
 ; @params: takes the currently offset pixels in r8
 draw_ball_line:
     push r10
@@ -250,17 +264,22 @@ draw_ball_line:
     mov r11, BALL_DIAMETER
     sub r11, r8
     sub r11, r8 ; draw diameter - 2* offset pixels
+
 decr_ball_draw_loop:
+
+    push r11
 
     ; sys_write
     mov rax, 1
-    mov rsi, [fb0_fd]
-    mov rsi, white
-    mov rdi, BYTES_PER_PIXEL
+    mov rdi, [fb0_fd]
+    mov rsi, red
+    mov rdx, BYTES_PER_PIXEL
     syscall
 
     test rax, rax
     js exit_failure
+
+    pop r11
 
     inc r10
     cmp r10, r11
@@ -338,8 +357,6 @@ section .data
     fb0_path db "/dev/fb0", 0
     white db 0xFF, 0xFF, 0xFF
     red db 0x00, 0x00, 0xFF
-
-
 
 section .bss
     fb0_fd resq 1
