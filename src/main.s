@@ -2,7 +2,7 @@
 
 ; TODO: 
 ;   - File i/o with /dev/fb0 ✅
-;   - Basic Pong Shapes
+;   - Basic Pong Shapes ✅
 ;   - User Input
 ;   - Ball physics
 ;   - Game Loop
@@ -36,7 +36,8 @@ _start:
 game_loop:
     ; rect 1
     mov rdi, 1
-    mov rsi, 1
+    mov rsi, [index]
+    inc qword [index]
     call draw_rectangle
 
     ; rect 2
@@ -50,7 +51,7 @@ game_loop:
     call draw_ball
  
     ; sleep 0.01s
-    mov rsi, 10
+    mov rsi, 1
     call sleep
 
     jmp game_loop
@@ -60,7 +61,7 @@ game_loop:
 ; @params: takes a time in millisecond in rsi
 sleep:
     imul rsi, 1000000 ; get time in milliseconds
-    mov rax, 1
+    mov rax, 0
     mov [timespec], rax
     mov [timespec + 8], rsi
 
@@ -272,7 +273,7 @@ decr_ball_draw_loop:
     ; sys_write
     mov rax, 1
     mov rdi, [fb0_fd]
-    mov rsi, red
+    mov rsi, white
     mov rdx, BYTES_PER_PIXEL
     syscall
 
@@ -357,6 +358,7 @@ section .data
     fb0_path db "/dev/fb0", 0
     white db 0xFF, 0xFF, 0xFF
     red db 0x00, 0x00, 0xFF
+    index dq 1
 
 section .bss
     fb0_fd resq 1
