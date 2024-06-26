@@ -5,22 +5,50 @@
 ;   - Basic Pong Shapes ✅
 ;   - User Input
 ;   - Ball physics
-;   - Game Loop
 ;   - Scores
-;   - Quit on q
 
 %define WIDTH 3200
 %define HEIGHT 2160
-%define BYTES_PER_PIXEL 4 ; 24 bit depth
+%define BYTES_PER_PIXEL 4 ; 32 bit depth
 
 %define RECT_WIDTH 100
 %define RECT_HEIGHT 300
 %define BALL_DIAMETER 60
 
+%define MOVE_SPEED 5
+
 global _start
+
+extern tcgetattr
+extern tcsetattr
+extern read
+extern fcntl
 
 section .text
 _start:
+    ; termios
+    ; save current terminal attr
+    mov rdi, [STDIN]
+    mov rsi, [tcgetattr_cmd]
+    mov rdx, old_termios
+    call tcgetattr
+
+    ; copy old attributes to new
+    mov rcx, 60
+    mov rsi, old_termios
+    mov rdi, new_termios
+    rep movsb
+
+    ; modify to allow non-cononical mode
+    and byte [new_termios + 12], 0xF9 ; clear ICANON and echo flags
+
+    ; set new terminal attr
+    mov rdi, [STDIN]
+    mov rsi, [tcsetattr_cmd]
+    mov rdx, [TCSANOW]
+    mov rcx, new_termios
+    call tcsetattr
+
     ; Open /dev/fb0
     mov rax, 2
     mov rdi, fb0_path
@@ -33,6 +61,7 @@ _start:
     js exit_failure
     mov [fb0_fd], rax
 
+    
 game_loop:
     ; Map into memory
     ; sys_mmap
@@ -53,28 +82,95 @@ game_loop:
 
     ; rect 1
     mov rdi, 1
-    mov rsi, [rect_1_y]
+    mov rsi, rect_1_y
     call draw_rectangle
 
     ; rect 2
     mov rdi, 3099
-    mov rsi, [rect_1_y]
+    mov rsi, rect_2_y
     call draw_rectangle
 
     ; ball
     mov rdi, WIDTH / 2
-    mov rsi, 100
+    mov rsi, 1000
     call draw_ball
 
     call draw
- 
-    ; sleep 0.01s
-    mov rsi, 1
+
+    ; roughly 30 fps
+    mov rsi, 30
     call sleep
+
+    ; termios
+    mov rdi, [STDIN]
+    mov rsi, char
+    mov rdx, 1
+    call read ; calls a non blocking read
+
+    test rax, rax
+    jg .handle_keystroke ; if a key press is returned
 
     jmp game_loop
 
     jmp exit_success
+
+.handle_keystroke:
+    cmp byte [char], 'q'
+    je exit_success
+
+    cmp byte [char], 'w'
+    je .handle_player_1_up
+
+    cmp byte [char], 's'
+    je .handle_player_1_down
+
+    cmp byte [char], 'i'
+    je .handle_player_2_up
+
+    cmp byte [char], 'k'
+    je .handle_player_2_down
+
+    jmp game_loop
+
+.handle_player_1_up:
+    mov rax, rect_1_y
+    add rax, MOVE_SPEED
+    cmp rax, HEIGHT - RECT_HEIGHT
+    jg game_loop ; if out of bounds, ignore
+
+    mov [rect_1_y], rax
+    
+    jmp game_loop
+
+.handle_player_1_down:
+    mov rax, rect_1_y
+    sub rax, MOVE_SPEED
+    test rax, rax
+    js game_loop ; if out of bounds, ignore
+
+    mov [rect_1_y], rax
+
+    jmp game_loop
+
+.handle_player_2_up:
+    mov rax, rect_2_y
+    add rax, MOVE_SPEED
+    cmp rax, HEIGHT - RECT_HEIGHT
+    jg game_loop ; if out of bounds, ignore
+
+    mov [rect_1_y], rax
+
+    jmp game_loop
+
+.handle_player_2_down:
+    mov rax, rect_2_y
+    sub rax, MOVE_SPEED
+    test rax, rax
+    js game_loop ; if out of bounds, ignore
+
+    mov [rect_1_y], rax
+
+    jmp game_loop
 
 draw:
     ; unmap_fb
@@ -110,13 +206,24 @@ close_file:
 
     ret
 
+restore_term:
+    mov rdi, [STDIN]
+    mov rsi, [tcsetattr_cmd]
+    mov rdx, [TCSANOW]
+    mov rcx, old_termios
+    call tcsetattr
+
+    ret
+
 exit_failure:
+    call restore_term
     call close_file
     mov rax, 60
     mov rdi, 1
     syscall
 
 exit_success:
+    call restore_term
     call close_file
     mov rax, 60
     xor rdi, rdi
@@ -333,20 +440,45 @@ width_loop:
     ret
 
 clear_screen:
-    push rax
-    xor rax, rax
-    mov [offset], rax
-    pop rax
-.clear_screen_loop:
+    push rsi
     push rdi
+
+    mov rsi, 0 ; draw whole heigt and width
+    mov rdi, 0
+    ; offset = (y_pos * WIDTH + x_pos ) * BYTES_PER_PIXEL
+    mov r8, 0 ; y_index
+clear_height_loop:
+    mov r9, 0 ; x_index
+clear_width_loop:
+    ; Add indexes
+    push rsi
+    push rdi
+
+    add rsi, r8 ; (y_pos + index)
+    add rdi, r9 ; (x_pos + index)
+
+    mov rax, rsi
+    imul rax, WIDTH ; (y_pos + index) * width
+    add rax, rdi ; ^ + (x_pos + index)
+    imul rax, BYTES_PER_PIXEL ; ^ * bytes_per_pixel
+    mov [offset], rax
+
     mov ebx, black
     call draw_pixel
+
     pop rdi
+    pop rsi
+    
+    inc r9
+    cmp r9, WIDTH 
+    jl clear_width_loop
 
-    add qword [offset], 4
+    inc r8
+    cmp r8, HEIGHT * 9 / 10
+    jl clear_height_loop
 
-    cmp qword [offset], WIDTH * HEIGHT * BYTES_PER_PIXEL
-    jl .clear_screen_loop
+    pop rdi
+    pop rsi
 
     ret
 
@@ -369,11 +501,22 @@ section .data
     fb0_path db "/dev/fb0", 0
     white equ 0xFFFFFFFF ; aBGR
     black equ 0xFF000000 
-    rect_1_y dq 1
-    rect_2_y dq 1
+    rect_1_y equ 900
+    rect_2_y equ 900
+
+    ; termios
+    tcgetattr_cmd dq 0x5401
+    tcsetattr_cmd dq 0x5402
+    STDIN dq 0
+    TCSANOW dq 0
 
 section .bss
     fb0_fd resq 1
     fb_mmap resq 1 
     offset resq 1
     timespec resb 16
+
+    ; termios
+    old_termios resb 60
+    new_termios resb 60
+    char resb 1

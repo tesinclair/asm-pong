@@ -1,5 +1,6 @@
 C=nasm
 C_FLAGS= -felf64 -g
+L_FLAGS= -lc -dynamic-linker /lib64/ld-linux-x86-64.so.2
 
 TARGET = main
 SOURCES = src/main.s
@@ -18,7 +19,7 @@ build: clean $(TARGET)
 	mv $(OBJECTS) a.out build/
 
 $(TARGET): $(OBJECTS)
-	ld $^
+	ld $^ $(L_FLAGS)
 
 $(OBJECTS): $(SOURCES)
 	$(C) $(C_FLAGS) $^
