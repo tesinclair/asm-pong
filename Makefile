@@ -15,7 +15,6 @@ run: build
 
 build: clean $(TARGET)
 	mkdir build/
-	touch build/temp.t
 	mv $(OBJECTS) a.out build/
 
 $(TARGET): $(OBJECTS)
