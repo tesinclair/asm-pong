@@ -29,8 +29,7 @@ _start:
     ; termios
     ; save current terminal attr
     mov rdi, [STDIN]
-    mov rsi, [tcgetattr_cmd]
-    mov rdx, old_termios
+    mov rsi, old_termios
     call tcgetattr
 
     ; copy old attributes to new
@@ -40,7 +39,7 @@ _start:
     rep movsb
 
     ; modify to allow non-cononical mode
-    and byte [new_termios + 12], 0xF9 ; clear ICANON and echo flags
+    and byte [new_termios + 12], 0xF9 ; clear ICANON 
 
     ; set new terminal attr
     mov rdi, [STDIN]
@@ -82,12 +81,12 @@ game_loop:
 
     ; rect 1
     mov rdi, 1
-    mov rsi, rect_1_y
+    mov rsi, [rect_1_y]
     call draw_rectangle
 
     ; rect 2
     mov rdi, 3099
-    mov rsi, rect_2_y
+    mov rsi, [rect_2_y]
     call draw_rectangle
 
     ; ball
@@ -132,8 +131,8 @@ game_loop:
 
     jmp game_loop
 
-.handle_player_1_up:
-    mov rax, rect_1_y
+.handle_player_1_down:
+    mov rax, [rect_1_y]
     add rax, MOVE_SPEED
     cmp rax, HEIGHT - RECT_HEIGHT
     jg game_loop ; if out of bounds, ignore
@@ -142,33 +141,33 @@ game_loop:
     
     jmp game_loop
 
-.handle_player_1_down:
-    mov rax, rect_1_y
+.handle_player_1_up:
+    mov rax, [rect_1_y]
     sub rax, MOVE_SPEED
     test rax, rax
     js game_loop ; if out of bounds, ignore
-
-    mov [rect_1_y], rax
-
-    jmp game_loop
-
-.handle_player_2_up:
-    mov rax, rect_2_y
-    add rax, MOVE_SPEED
-    cmp rax, HEIGHT - RECT_HEIGHT
-    jg game_loop ; if out of bounds, ignore
 
     mov [rect_1_y], rax
 
     jmp game_loop
 
 .handle_player_2_down:
-    mov rax, rect_2_y
+    mov rax, [rect_2_y]
+    add rax, MOVE_SPEED
+    cmp rax, HEIGHT - RECT_HEIGHT
+    jg game_loop ; if out of bounds, ignore
+
+    mov [rect_2_y], rax
+
+    jmp game_loop
+
+.handle_player_2_up:
+    mov rax, [rect_2_y]
     sub rax, MOVE_SPEED
     test rax, rax
     js game_loop ; if out of bounds, ignore
 
-    mov [rect_1_y], rax
+    mov [rect_2_y], rax
 
     jmp game_loop
 
@@ -501,8 +500,8 @@ section .data
     fb0_path db "/dev/fb0", 0
     white equ 0xFFFFFFFF ; aBGR
     black equ 0xFF000000 
-    rect_1_y equ 900
-    rect_2_y equ 900
+    rect_1_y dq 900
+    rect_2_y dq 900
 
     ; termios
     tcgetattr_cmd dq 0x5401
