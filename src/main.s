@@ -3,8 +3,9 @@
 ; TODO: 
 ;   - File i/o with /dev/fb0 ✅
 ;   - Basic Pong Shapes ✅
-;   - User Input
+;   - User Input ✅
 ;   - Ball physics
+;   - collision
 ;   - Scores
 
 %define WIDTH 3200
@@ -15,7 +16,17 @@
 %define RECT_HEIGHT 300
 %define BALL_DIAMETER 60
 
-%define MOVE_SPEED 5
+%define MOVE_SPEED 10
+
+; c_lflags for termios
+%define ECHO 8
+%define ECHONL 64
+%define ICANON 2
+%define IEXTEN 32768
+
+; flag for fcntl nonblocking
+%define O_NONBLOCK 2048
+%define F_SETFL 4
 
 global _start
 
@@ -28,25 +39,40 @@ section .text
 _start:
     ; termios
     ; save current terminal attr
-    mov rdi, [STDIN]
-    mov rsi, old_termios
+    xor rdi, rdi
+    mov rsi, term_conf
     call tcgetattr
 
-    ; copy old attributes to new
+    mov rsi, term_conf
+    mov rdi, old_conf
     mov rcx, 60
-    mov rsi, old_termios
-    mov rdi, new_termios
     rep movsb
 
-    ; modify to allow non-cononical mode
-    and byte [new_termios + 12], 0xF9 ; clear ICANON 
+    ; modify to allow non-cononical mode 
+    ; sizeof flags: 4 bytes. 
+    xor rax, rax
+    mov eax, ECHO | ECHONL | ICANON | IEXTEN
+    not eax
+    and dword [term_conf + 12], eax
 
     ; set new terminal attr
-    mov rdi, [STDIN]
-    mov rsi, [tcsetattr_cmd]
-    mov rdx, [TCSANOW]
-    mov rcx, new_termios
+    xor rdi, rdi
+    xor rsi, rsi
+    mov rdx, term_conf
     call tcsetattr
+
+    test rax, rax
+    js exit_failure
+
+    ; sys_fcntl
+    mov rax, 72
+    xor rdi, rdi
+    mov rsi, F_SETFL
+    mov rdx, O_NONBLOCK
+    syscall
+
+    test rax, rax
+    js exit_failure
 
     ; Open /dev/fb0
     mov rax, 2
@@ -97,11 +123,11 @@ game_loop:
     call draw
 
     ; roughly 30 fps
-    mov rsi, 30
+    mov rsi, 15
     call sleep
 
     ; termios
-    mov rdi, [STDIN]
+    xor rdi, rdi
     mov rsi, char
     mov rdx, 1
     call read ; calls a non blocking read
@@ -206,10 +232,9 @@ close_file:
     ret
 
 restore_term:
-    mov rdi, [STDIN]
-    mov rsi, [tcsetattr_cmd]
-    mov rdx, [TCSANOW]
-    mov rcx, old_termios
+    xor rdi, rdi
+    xor rsi, rsi
+    mov rdx, old_conf
     call tcsetattr
 
     ret
@@ -439,48 +464,21 @@ width_loop:
     ret
 
 clear_screen:
-    push rsi
+    push rcx
+    push rax
     push rdi
 
-    mov rsi, 0 ; draw whole heigt and width
-    mov rdi, 0
-    ; offset = (y_pos * WIDTH + x_pos ) * BYTES_PER_PIXEL
-    mov r8, 0 ; y_index
-clear_height_loop:
-    mov r9, 0 ; x_index
-clear_width_loop:
-    ; Add indexes
-    push rsi
-    push rdi
-
-    add rsi, r8 ; (y_pos + index)
-    add rdi, r9 ; (x_pos + index)
-
-    mov rax, rsi
-    imul rax, WIDTH ; (y_pos + index) * width
-    add rax, rdi ; ^ + (x_pos + index)
-    imul rax, BYTES_PER_PIXEL ; ^ * bytes_per_pixel
-    mov [offset], rax
-
-    mov ebx, black
-    call draw_pixel
+    mov rdi, [fb_mmap]
+    mov eax, black
+    mov rcx, WIDTH * (HEIGHT - 165)
+    rep stosd
 
     pop rdi
-    pop rsi
-    
-    inc r9
-    cmp r9, WIDTH 
-    jl clear_width_loop
-
-    inc r8
-    cmp r8, HEIGHT * 9 / 10
-    jl clear_height_loop
-
-    pop rdi
-    pop rsi
-
+    pop rax
+    pop rcx
     ret
-
+    
+    
 ; takes a color in ebx, and assumes fb_mmap, and offset
 draw_pixel:
     push rcx
@@ -503,12 +501,6 @@ section .data
     rect_1_y dq 900
     rect_2_y dq 900
 
-    ; termios
-    tcgetattr_cmd dq 0x5401
-    tcsetattr_cmd dq 0x5402
-    STDIN dq 0
-    TCSANOW dq 0
-
 section .bss
     fb0_fd resq 1
     fb_mmap resq 1 
@@ -516,6 +508,6 @@ section .bss
     timespec resb 16
 
     ; termios
-    old_termios resb 60
-    new_termios resb 60
+    term_conf resb 60
+    old_conf resb 60
     char resb 1
