@@ -10,6 +10,7 @@
 
 %define WIDTH 3200
 %define HEIGHT 2160
+%define USABLE_HEIGHT 2160 - 165
 %define BYTES_PER_PIXEL 4 ; 32 bit depth
 
 %define RECT_WIDTH 100
@@ -86,10 +87,7 @@ _start:
     js exit_failure
     mov [fb0_fd], rax
 
-    
-game_loop:
-    ; Map into memory
-    ; sys_mmap
+     ; sys_mmap
     mov rax, 9
     xor rdi, rdi
     mov rsi, WIDTH * HEIGHT * BYTES_PER_PIXEL
@@ -102,6 +100,8 @@ game_loop:
     test rax, rax
     js exit_failure
     mov [fb_mmap], rax
+
+game_loop:
 
     call clear_screen
 
@@ -117,12 +117,10 @@ game_loop:
 
     ; ball
     mov rdi, WIDTH / 2
-    mov rsi, 1000
+    mov rsi, HEIGHT / 2
     call draw_ball
 
-    call draw
-
-    ; roughly 30 fps
+    ; roughly 60 fps
     mov rsi, 15
     call sleep
 
@@ -160,7 +158,7 @@ game_loop:
 .handle_player_1_down:
     mov rax, [rect_1_y]
     add rax, MOVE_SPEED
-    cmp rax, HEIGHT - RECT_HEIGHT
+    cmp rax, USABLE_HEIGHT - RECT_HEIGHT
     jg game_loop ; if out of bounds, ignore
 
     mov [rect_1_y], rax
@@ -180,7 +178,7 @@ game_loop:
 .handle_player_2_down:
     mov rax, [rect_2_y]
     add rax, MOVE_SPEED
-    cmp rax, HEIGHT - RECT_HEIGHT
+    cmp rax, USABLE_HEIGHT - RECT_HEIGHT
     jg game_loop ; if out of bounds, ignore
 
     mov [rect_2_y], rax
@@ -197,7 +195,7 @@ game_loop:
 
     jmp game_loop
 
-draw:
+unmap:
     ; unmap_fb
     mov rax, 11
     mov rdi, [fb_mmap]
@@ -240,6 +238,7 @@ restore_term:
     ret
 
 exit_failure:
+    call unmap
     call restore_term
     call close_file
     mov rax, 60
@@ -247,6 +246,7 @@ exit_failure:
     syscall
 
 exit_success:
+    call unmap
     call restore_term
     call close_file
     mov rax, 60
