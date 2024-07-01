@@ -21,8 +21,10 @@ build: clean $(TARGET)
 $(TARGET): $(OBJECTS)
 	ld $^ $(L_FLAGS)
 
-$(OBJECTS): $(SOURCES)
-	$(C) $(C_FLAGS) $(SOURCES)
+%.o: %.s
+	$(C) $(C_FLAGS) src/main.s
+	$(C) $(C_FLAGS) src/lib/draw.s
+	$(C) $(C_FLAGS) src/lib/math.s
 
 clean:
 	rm -rf build

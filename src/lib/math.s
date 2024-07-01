@@ -30,8 +30,9 @@ sqrt:
     cmp rsi, 0
     je .sqrt_ret_guess
 
-    mov r10, rdi
-    idiv r10, rbx
+    mov rax, rdi
+    div rbx
+    mov rax, r10
     add rbx, r10
     shr rbx, 1
 

@@ -15,7 +15,7 @@
 
 %define RECT_WIDTH 100
 %define RECT_HEIGHT 300
-%define BALL_DIAMETER 60
+%define BALL_RADIUS 30
 
 %define MOVE_SPEED 10
 
@@ -108,22 +108,40 @@ _start:
 
 game_loop:
 
+    mov rdi, [fb_mmap] ; frame buf base addr
     call clear_screen
 
     ; rect 1
-    mov rdi, 1
-    mov rsi, [rect_1_y]
+    mov rdi, 1 ; xpos
+    mov rsi, [rect_1_y] ;ypos
+    mov rdx, [fb_mmap] ; frame buf base addr
+    mov rcx, RECT_HEIGHT
+    mov r10, RECT_WIDTH
     call draw_rectangle
+
+    test rax, rax
+    js exit_failure
 
     ; rect 2
-    mov rdi, 3099
-    mov rsi, [rect_2_y]
+    mov rdi, 3099 ; xpos
+    mov rsi, [rect_2_y] ; ypos
+    mov rdx, [fb_mmap] ; frame buf base addr
+    mov rcx, RECT_HEIGHT
+    mov r10, RECT_WIDTH
     call draw_rectangle
 
+    test rax, rax
+    js exit_failure
+
     ; ball
-    mov rdi, WIDTH / 2
-    mov rsi, HEIGHT / 2
+    mov rdi, WIDTH / 2 ; xpos
+    mov rsi, HEIGHT / 2 ; ypos
+    mov rdx, [fb_mmap] ; frame buf base addr
+    mov rcx, BALL_RADIUS
     call draw_ball
+
+    test rax, rax
+    js exit_failure
 
     ; roughly 60 fps
     mov rsi, 15
@@ -152,12 +170,6 @@ game_loop:
     cmp byte [char], 's'
     je .handle_player_1_down
 
-    cmp byte [char], 'i'
-    je .handle_player_2_up
-
-    cmp byte [char], 'k'
-    je .handle_player_2_down
-
     jmp game_loop
 
 .handle_player_1_down:
@@ -177,26 +189,6 @@ game_loop:
     js game_loop ; if out of bounds, ignore
 
     mov [rect_1_y], rax
-
-    jmp game_loop
-
-.handle_player_2_down:
-    mov rax, [rect_2_y]
-    add rax, MOVE_SPEED
-    cmp rax, USABLE_HEIGHT - RECT_HEIGHT
-    jg game_loop ; if out of bounds, ignore
-
-    mov [rect_2_y], rax
-
-    jmp game_loop
-
-.handle_player_2_up:
-    mov rax, [rect_2_y]
-    sub rax, MOVE_SPEED
-    test rax, rax
-    js game_loop ; if out of bounds, ignore
-
-    mov [rect_2_y], rax
 
     jmp game_loop
 
