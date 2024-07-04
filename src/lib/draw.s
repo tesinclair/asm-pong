@@ -116,10 +116,11 @@ draw_rectangle:
     xor r11, r11
 .draw_rect_loop:
     ; calculate the start of the line
+    xor rax, rax
     mov rax, rsi
-    add rax, r11
-    imul rax, SCREEN_WIDTH
-    add rax, rdi
+    add rax, r11 ; start + y_index
+    imul rax, SCREEN_WIDTH ; * screen_width
+    add rax, rdi ; + x_offset
     imul rax, BYTES_PP ; rax now contains offset
 
     mov rdi, r10  ; rect_width
