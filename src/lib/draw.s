@@ -22,6 +22,13 @@ global clear_screen
 ;       - Draws a ball of radius onto the frame buffer
 ;         at pos (x, y)
 draw_ball:
+
+    ; check circle falls in positive quadrant
+    cmp rdi, rcx
+    jl .bad_circle
+    cmp rsi, rcx
+    jl .bad_circle
+
     push r10
     push r8
     push r9
@@ -29,54 +36,56 @@ draw_ball:
     push r12
 
     ; offset y = radius + y_pos
-    mov r9, rcx ; offset y
-    add r9, rdi
+    mov r9, rcx ; offset_y = radius
+    add r9, rsi ; + y_pos
 .draw_ball_loop:
-    ; calculate offset x = sqrt(r^2 - (r9 - y_pos)^2) + x_pos
-    mov r8, rcx ; offset x
-    imul r8, rcx    ; r^2
+    ; calculate normal co-ords (x-rdi)^2 = rcx^2 - (r9 - rsi)^2
+    mov r8, rcx 
+    imul r8, r8 ; rcx^2
+
     mov r11, r9
-    sub r11, rsi    ; r9 - y_pos
-    imul r11, r11
-    sub r8, r11     ; r^2 - (r9 - y_pos)^2
+    sub r11, rsi ; r11 = r9 - rsi
+    imul r11, r11 ; (r9 - rsi)^2
 
+    sub r8, r11 ; r8 = rcx^2 - (r9 - rsi)^2
+
+    ; x = sqrt(r8) + rdi
     push rdi
-
     mov rdi, r8
     call sqrt
-    mov r8, rax
-
+    mov r8, rax ; sqrt(r8)
     pop rdi
 
-    add r8, rdi     ; x_pos
+    add r8, rdi ; x as co-ord
 
     ; calculate start offset [r12]
     ; x and y are (r8, r9)
+    ; (r9 * SCREEN_WIDTH) + r8
     mov r12, r9
     imul r12, SCREEN_WIDTH
     add r12, r8
 
-    ; num pixels to draw = (radius - offset.x) * 2
-    mov r10, rcx
-    sub r10, r8
-    shl r10, 1
+    ; num pixels to draw = (x_pos - offset.x) * 2
+    mov r10, r8
+    sub r10, rdi ; radius - offset.x
+    shl r10, 1 ; * 2
 
     ; draw the line
     push rdi
     push rsi
-    mov rsi, r12    ; offset
-    mov rdi, r10    ; num pixels
+    mov rsi, r12 ; offset  
+    mov rdi, 2 ; num pixels
     call draw_line
     pop rsi
     pop rdi
 
-    pop r12
-
-    inc r9
-    mov r11, rcx
-    shl r11, 1
-    cmp r9, r11
-    jl .draw_ball_loop
+    dec r9
+    push r8
+    mov r8, rsi
+    sub r8, rcx
+    cmp r9, r8 ; if curr_y = y_pos - radius, we are done
+    pop r8 
+    jge .draw_ball_loop
 
     pop r12
     pop r11
@@ -85,6 +94,11 @@ draw_ball:
     pop r10
 
     xor rax, rax
+    ret
+
+.bad_circle:
+    ; no stack corruption
+    mov rax, -1
     ret
 
 ; @params:
@@ -123,12 +137,14 @@ draw_rectangle:
     add rax, rdi ; + x_offset
     imul rax, BYTES_PP ; rax now contains offset
 
+    push rdi
     mov rdi, r10  ; rect_width
     push rsi
     mov rsi, rax  ; offset
     mov r14, rdx  ; frame buf
     call draw_line
     pop rsi
+    pop rdi
 
     inc r11
     cmp r11, rcx

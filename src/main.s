@@ -1,10 +1,10 @@
-; Little endian
-
 ; TODO: 
 ;   - File i/o with /dev/fb0 ✅
 ;   - Basic Pong Shapes ✅
 ;   - User Input ✅
+;   - Refactor to modular
 ;   - Ball physics
+;   - AI ball follow
 ;   - collision
 ;   - Scores
 
