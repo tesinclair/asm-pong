@@ -3,55 +3,64 @@
 global sqrt
 
 ; @param:
-;       - rdi: number to square root (max 1 quadword)
+;       - rdi: number to square root (max 1 doubleword)
 ; @returns:
 ;       - rax: the numbers square root
 ; @function:
-;       - Returns the square root of the number
-;         to the nearest whole number
+;       - Returns the positive square root of the number
+;         rounded up
 sqrt:
-    push r10
-    push rbx
+    push r9 ; for calc
+    push rbx ; guess
+    push rdx
 
     cmp rdi, 0
-    js .sqrt_ret_err
     je .sqrt_ret_self
-
     cmp rdi, 1
     je .sqrt_ret_self
-    
-    mov rbx, rdi
-    shr rbx, 1
 
-.sqrt_guess_loop:
-    mov rsi, rbx
-    imul rsi, rsi
-    sub rsi, rdi
-    cmp rsi, 0
-    je .sqrt_ret_guess
-
+    ; divide number by 6
     mov rax, rdi
-    div rbx
-    mov rax, r10
-    add rbx, r10
-    shr rbx, 1
+    mov r9, 6
+    xor rdx, rdx
+    div r9
+    mov rbx, rax
 
-    jmp .sqrt_guess_loop
+    mov r9, rbx
+    imul r9, r9
+    cmp r9, rdi
+    jl .while_guess_l_n
+    jg .while_guess_g_n
+    je .sqrt_ret
 
-.sqrt_ret_guess:
+.while_guess_g_n: ; while guess^2 > n
+    dec rbx
+    mov r9, rbx
+    imul r9, r9
+    cmp r9, rdi
+    jg .while_guess_g_n
+
+.while_guess_l_n: ; while guess^2 < n
+    inc rbx
+    mov r9, rbx
+    imul r9, r9
+    cmp r9, rdi
+    jl .while_guess_l_n 
+
+; Should always lead to guess being ceil sqrt(n)
+
+.sqrt_ret:
     mov rax, rbx
+
+    pop rdx
     pop rbx
-    pop r10
+    pop r9
+
     ret
     
-.sqrt_ret_err:
-    mov rax, -1
-    pop rbx
-    pop r10
-    ret
-
 .sqrt_ret_self:
     mov rax, rdi
+    pop rdx
     pop rbx
-    pop r10
+    pop r9
     ret

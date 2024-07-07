@@ -143,8 +143,7 @@ game_loop:
     test rax, rax
     js exit_failure
 
-    ; roughly 60 fps
-    mov rsi, 15
+    mov rsi, 1
     call sleep
 
     ; termios

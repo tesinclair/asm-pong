@@ -16,7 +16,7 @@ global clear_screen
 ; @params:
 ;       - rdi: xpos
 ;       - rsi: ypos
-;       - rdx: frame buf base addr
+;       - rdx: frame buf base addr ;; Used implicitely for draw_line
 ;       - rcx: radius
 ; @function:
 ;       - Draws a ball of radius onto the frame buffer
@@ -52,8 +52,9 @@ draw_ball:
     ; x = sqrt(r8) + rdi
     push rdi
     mov rdi, r8
-    call sqrt
+    call sqrt 
     mov r8, rax ; sqrt(r8)
+    imul r8, -1 ; we need the negative root
     pop rdi
 
     add r8, rdi ; x as co-ord
@@ -65,16 +66,16 @@ draw_ball:
     imul r12, SCREEN_WIDTH
     add r12, r8
 
-    ; num pixels to draw = (x_pos - offset.x) * 2
-    mov r10, r8
-    sub r10, rdi ; radius - offset.x
-    shl r10, 1 ; * 2
+    ; num pixels to draw = (center.x - x_pos) * 2
+    mov r10, rdi
+    sub r10, r8 ; center.x - x_pos
+    shl r10, 1 ; * 2 
 
     ; draw the line
     push rdi
     push rsi
     mov rsi, r12 ; offset  
-    mov rdi, 2 ; num pixels
+    mov rdi, r10 ; num pixels
     call draw_line
     pop rsi
     pop rdi
