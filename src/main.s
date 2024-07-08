@@ -2,7 +2,7 @@
 ;   - File i/o with /dev/fb0 ✅
 ;   - Basic Pong Shapes ✅
 ;   - User Input ✅
-;   - Refactor to modular
+;   - Refactor to modular ✅
 ;   - Ball physics
 ;   - AI ball follow
 ;   - collision
@@ -17,7 +17,7 @@
 %define RECT_HEIGHT 300
 %define BALL_RADIUS 30
 
-%define MOVE_SPEED 10
+%define MOVE_SPEED 7
 
 ; c_lflags for termios
 %define ECHO 8
@@ -36,10 +36,16 @@ extern tcsetattr
 extern read
 extern fcntl
 
-; lib functions
+; LIB Functions:
+; libdraw
 extern draw_ball
 extern draw_rectangle
 extern clear_screen
+; libphysics
+extern move_ai
+extern move_ball
+
+
 
 section .text
 _start:
@@ -122,6 +128,11 @@ game_loop:
     test rax, rax
     js exit_failure
 
+    ; Ai follow
+    ;mov rdi, rect_2_y
+    ;mov rsi, ball_y
+    ;call move_ai
+
     ; rect 2
     mov rdi, 3099 ; xpos
     mov rsi, [rect_2_y] ; ypos
@@ -129,13 +140,13 @@ game_loop:
     mov rcx, RECT_HEIGHT
     mov r10, RECT_WIDTH
     call draw_rectangle
-
+        
     test rax, rax
     js exit_failure
 
     ; ball
-    mov rdi, WIDTH / 2 ; xpos
-    mov rsi, HEIGHT / 2 ; ypos
+    mov rdi, [ball_x] ; xpos
+    mov rsi, [ball_y] ; ypos
     mov rdx, [fb_mmap] ; frame buf base addr
     mov rcx, BALL_RADIUS
     call draw_ball
@@ -143,7 +154,7 @@ game_loop:
     test rax, rax
     js exit_failure
 
-    mov rsi, 1
+    mov rsi, 15
     call sleep
 
     ; termios
@@ -164,14 +175,14 @@ game_loop:
     je exit_success
 
     cmp byte [char], 'w'
-    je .handle_player_1_up
+    je .handle_player_up
 
     cmp byte [char], 's'
-    je .handle_player_1_down
+    je .handle_player_down
 
     jmp game_loop
 
-.handle_player_1_down:
+.handle_player_down:
     mov rax, [rect_1_y]
     add rax, MOVE_SPEED
     cmp rax, USABLE_HEIGHT - RECT_HEIGHT
@@ -181,7 +192,7 @@ game_loop:
     
     jmp game_loop
 
-.handle_player_1_up:
+.handle_player_up:
     mov rax, [rect_1_y]
     sub rax, MOVE_SPEED
     test rax, rax
@@ -255,6 +266,9 @@ section .data
     black equ 0xFF000000 
     rect_1_y dq 900
     rect_2_y dq 900
+    ball_y dq HEIGHT / 2
+    ball_x dq WIDTH / 2
+    ball_theta dq 0
 
 section .bss
     fb0_fd resq 1

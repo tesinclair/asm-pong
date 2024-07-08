@@ -65,6 +65,7 @@ draw_ball:
     mov r12, r9
     imul r12, SCREEN_WIDTH
     add r12, r8
+    imul r12, BYTES_PP
 
     ; num pixels to draw = (center.x - x_pos) * 2
     mov r10, rdi
