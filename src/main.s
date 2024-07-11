@@ -3,9 +3,10 @@
 ;   - Basic Pong Shapes ✅
 ;   - User Input ✅
 ;   - Refactor to modular ✅
-;   - Ball physics
-;   - AI ball follow
-;   - collision
+;   - Ball physics ✅
+;   - AI ball follow ✅
+;   - sin and cos
+;   - collision ; random direction whenever colliding
 ;   - Scores
 
 %define WIDTH 3200
@@ -112,6 +113,9 @@ _start:
     js exit_failure
     mov [fb_mmap], rax
 
+    ; start angle for ball
+    mov [ball_theta], 0
+
 game_loop:
 
     mov rdi, [fb_mmap] ; frame buf base addr
@@ -129,9 +133,9 @@ game_loop:
     js exit_failure
 
     ; Ai follow
-    ;mov rdi, rect_2_y
-    ;mov rsi, ball_y
-    ;call move_ai
+    mov rdi, rect_2_y
+    mov rsi, ball_y
+    call move_ai
 
     ; rect 2
     mov rdi, 3099 ; xpos
@@ -141,6 +145,15 @@ game_loop:
     mov r10, RECT_WIDTH
     call draw_rectangle
         
+    test rax, rax
+    js exit_failure
+
+    ; move ball
+    mov rdi, ball_x
+    mov rsi, ball_y
+    mov rdx, [theta]
+    call move_ball
+    
     test rax, rax
     js exit_failure
 
@@ -268,7 +281,7 @@ section .data
     rect_2_y dq 900
     ball_y dq HEIGHT / 2
     ball_x dq WIDTH / 2
-    ball_theta dq 0
+    ball_theta dq 1
 
 section .bss
     fb0_fd resq 1
