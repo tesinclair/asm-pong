@@ -114,7 +114,7 @@ _start:
     mov [fb_mmap], rax
 
     ; start angle for ball
-    mov [ball_theta], 0
+    mov qword [ball_theta], 0
 
 game_loop:
 
@@ -151,7 +151,7 @@ game_loop:
     ; move ball
     mov rdi, ball_x
     mov rsi, ball_y
-    mov rdx, [theta]
+    mov rdx, [ball_theta]
     call move_ball
     
     test rax, rax

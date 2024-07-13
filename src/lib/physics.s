@@ -30,15 +30,16 @@ move_ball:
     mov r9, rdx ; theta
 
     ; y
-    push
+    push rdi
     mov rdi, r9
-    call cos
+    call cos ; cos theta
     pop rdi
-    mov r9, rax
-    test rax, rax
+    test rax, rax ; errors in rax
     js .move_ball_failure
 
-    imul r9, MOVE_SPEED 
+    ; returns in xmm0
+    mulsd xmm0, [move_speed_f]
+    cvtsd2si r9, xmm0 ; floor
 
     add rbx, r9
     cmp rbx, USABLE_HEIGHT
@@ -56,15 +57,16 @@ move_ball:
     mov rdi, r9
     call sin
     pop rdi
-    mov r9, rax
     test rax, rax
     js .move_ball_failure
 
-    imul r9, MOVE_SPEED
+    mulsd xmm0, [move_speed_f]
+    cvtsd2si r9, xmm0 ; floor
+
     imul r9, -1
 
     add r10, r9
-    cmp r10, WIDTH
+    cmp r10, SCREEN_WIDTH
     jg .move_ball_ret
     cmp r10, 0
     js .move_ball_ret
@@ -119,3 +121,5 @@ move_ai:
     mov [rdi], rbx
     jmp .move_ai_return
     
+section .data
+    move_speed_f dq 4.0
