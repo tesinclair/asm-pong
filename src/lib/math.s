@@ -130,37 +130,140 @@ cos:
 ; @returns:
 ;       - xmm0: result to 2 decimal places
 sin:
-    ; using approximation: 
-    ;       y = (4*theta^2)/(PI^2) * (PI - theta)
+    ; using taylor series: 
+    ;       y = x + x^3/3! + x^5/5! + x^7/7! ;; x = theta
+    ; accurate in the interval [-pi/2, pi/2]
     push r9
 
-    mov r9, rdi
-    imul r9, r9
-    imul r9, 4 ; 4 * theta^2
+    call map_theta
+    call cvt_theta_to_rads ; returns to xmm0
+
+    mov r9, rdi ; theta
+    imul r9, rdi
+    imul r9, rdi ; x^3
     cvtsi2sd xmm0, r9
+    movsd xmm1, [three_factorial]
+    divsd xmm0, xmm1 ; x^3/3!
 
-    movsd xmm1, [pi]
-    ; push xmm1 to stack
-    sub rsp, 16
-    movdqu [rsp], xmm1
-    mulsd xmm1, xmm1 ; PI^2
-    divsd xmm0, xmm1 ; (4*theta^2)/(PI^2)
-    ; pop xmm1
-    movdqu xmm0, [rsp]
-    add rsp, 16
+    imul r9, rdi
+    imul r9, rdi ; x^5
+    cvtsi2sd xmm1, r9
+    movsd xmm2, [five_factorial]
+    divsd xmm1, xmm2 ; x^5/5!
 
-    cvtsi2sd xmm2, rdi
-    subsd xmm0, xmm2
+    addsd xmm0, xmm1 ; x^3/3! + x^5/5!
 
-    mulsd xmm0, xmm1 ; (4*theta^2)/(PI^2) * (PI - theta)
+    imul r9, rdi
+    imul r9, rdi ; x^7
+    cvtsi2sd xmm1, r9
+    movsd xmm2, [seven_factorial]
+    divsd xmm1, xmm2 ; x^7/7!
+
+    addsd xmm0, xmm1 ; x^3/3! + x^5/5! + x^7/7!
+
+    cvtsi2sd xmm1, rdi
+    addsd xmm0, xmm1 ; x + x^3/3! + x^5/5! + x^7/7!
+
     call round_2_decimal_places
 
     pop r9
 
     ret
 
+; @params:
+;       - rdi: theta
+; @function:
+;       - takes a theta - in degrees
+;         and converts it to radians
+cvt_theta_to_rads:
+    ; rads = x * pi/180
+    cvtsi2sd xmm0, rdi
+    
+    sub rsp, 16
+    movdqu [rsp], xmm1 ; push xmm1
+
+    movsd xmm1, [pi]
+    divsd xmm1, [hundred_eighty]
+
+    mulsd xmm0, xmm1 ; x * pi/180
+
+    movdqu xmm1, [rsp] ; restore xmm1
+    add rsp, 16
+
+    ret ; return xmm0
+
+; @params:
+;       - rdi: theta
+; @function:
+;       - takes a theta - in degrees
+;         and maps it to the inteval [-90, 90]
+; @returns:
+;       - rax: mapped theta
+map_theta:
+    ; alg:
+    ;   (theta + 180) % 360 - 180 ;; get withing -180, 180
+    ;   if theta > 90:
+    ;       theta = 180 - theta
+    ;   if theta < -90:
+    ;       theta = -180 - angle
+
+    push rdi
+
+    add rdi, 180 
+    mov rdx, 360
+    call mod
+
+    sub rax, 180
+
+    cmp rax, 90
+    jg .theta_greater_90
+    cmp rax, -90
+    jl .theta_less_m_90
+
+    ret
+
+.theta_greater_90:
+    mov rdi, 180
+    sub rdi, rax
+    mov rax, rdi
+    ret
+
+.theta_less_m_90:
+    mov rdi, -180
+    sub rdi, rax
+    mov rax, rdi
+    ret
+
+; @params:
+;       - rdi: x
+;       - rdx: y
+; @function:
+;       - take an x and a y and calculates x % y
+; @returns:
+;       - rax: x % y
+mod:
+    ; equation:
+    ;   x % y = x - y(x // y)
+
+    push rdx
+
+    mov rax, rdi
+    xor rdx, rdx
+    cqo
+    idiv rdx ; x // y
+    pop rdx
+
+    imul rax, rdx ; y(x // y)
+    sub rdi, rax
+    mov rax, rdi
+
+    ret
 
 section .data
     pi dq 3.142
     hundred dq 100.0
     two dq 2.0
+    hundred_eighty dq 180.0
+    three_factorial dq 6.0
+    five_factorial dq 120.0
+    seven_factorial dq 5040.0
