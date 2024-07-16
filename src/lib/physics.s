@@ -4,8 +4,9 @@ global move_ai
 ; libmath
 extern sin
 extern cos
+extern mod
 
-%define MOVE_SPEED 2
+%define MOVE_SPEED 4
 %define SCREEN_WIDTH 3200
 %define SCREEN_HEIGHT 2160
 %define USABLE_HEIGHT 2160 - 165
@@ -40,10 +41,14 @@ move_ball:
     ; returns in xmm0
     mulsd xmm0, [move_speed_f]
     cvtsd2si r9, xmm0 ; floor
+    cmp r9, MOVE_SPEED
+    jle .no_set_max_y ; not above move speed
+    mov r9, MOVE_SPEED
 
+.no_set_max_y:
     add rbx, r9
     cmp rbx, USABLE_HEIGHT
-    jg .calc_x
+    jge .calc_x
     cmp rbx, 0
     js .calc_x
 
@@ -62,10 +67,14 @@ move_ball:
 
     mulsd xmm0, [move_speed_f]
     cvtsd2si r9, xmm0 ; floor
-
     imul r9, -1
-
     add r10, r9
+
+    cmp r9, MOVE_SPEED
+    jle .no_set_max_x
+    mov r9, MOVE_SPEED
+
+.no_set_max_x:
     cmp r10, SCREEN_WIDTH
     jg .move_ball_ret
     cmp r10, 0
@@ -97,8 +106,8 @@ move_ai:
     push rbx
     mov rbx, [rdi]
     cmp rbx, rsi
-    jl .move_ai_up ; if y_pos < ball_y_pos
-    jg .move_ai_down ; if y_pos < ball_y_pos
+    jg .move_ai_up ; if y_pos < ball_y_pos
+    jl .move_ai_down ; if y_pos < ball_y_pos
     
 .move_ai_return:
     pop rbx
@@ -122,4 +131,4 @@ move_ai:
     jmp .move_ai_return
     
 section .data
-    move_speed_f dq 2.0
+    move_speed_f dq 4.0
