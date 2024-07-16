@@ -21,7 +21,7 @@ sqrt:
     cmp rdi, 1
     je .sqrt_ret_self
 
-    ; divide number by 6
+    ; num // 6
     mov rax, rdi
     mov r9, 6
     xor rdx, rdx
@@ -220,18 +220,24 @@ map_theta:
     cmp rax, -90
     jl .theta_less_m_90
 
+    pop rdi
+
     ret
 
 .theta_greater_90:
     mov rdi, 180
     sub rdi, rax
     mov rax, rdi
+
+    pop rdi
     ret
 
 .theta_less_m_90:
     mov rdi, -180
     sub rdi, rax
     mov rax, rdi
+
+    pop rdi
     ret
 
 ; @params:
@@ -245,17 +251,19 @@ mod:
     ; equation:
     ;   x % y = x - y(x // y)
 
-    push rdx
+    push rsi
 
-    mov rax, rdi
+    mov rax, rdi ; x
+    mov rsi, rdx ; y
     xor rdx, rdx
-    cqo
-    idiv rdx ; x // y
-    pop rdx
+    div rsi ; x // y
+    mov rdx, rsi
 
     imul rax, rdx ; y(x // y)
     sub rdi, rax
     mov rax, rdi
+
+    pop rsi
 
     ret
 

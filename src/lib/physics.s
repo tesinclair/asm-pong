@@ -5,7 +5,7 @@ global move_ai
 extern sin
 extern cos
 
-%define MOVE_SPEED 4
+%define MOVE_SPEED 2
 %define SCREEN_WIDTH 3200
 %define SCREEN_HEIGHT 2160
 %define USABLE_HEIGHT 2160 - 165
@@ -122,4 +122,4 @@ move_ai:
     jmp .move_ai_return
     
 section .data
-    move_speed_f dq 4.0
+    move_speed_f dq 2.0
