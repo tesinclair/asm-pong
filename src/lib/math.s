@@ -3,6 +3,7 @@
 global sqrt
 global cos
 global sin
+global random
 
 ; @param:
 ;       - rdi: number to square root (max 1 doubleword)
@@ -267,6 +268,62 @@ mod:
 
     ret
 
+; @params:
+;       - rdi: lower bound (inclusive)
+;       - rsi: upper bound (inclusive)
+; @function:
+;       - returns a number between rdi
+;         and rsi in rax
+; @returns:
+;       - rax: random number
+random:
+    push rdi
+    push rsi
+    ; sys_getrandom
+    mov rax, 318
+    mov rdi, random_buf
+    mov rsi, 16
+    xor rdx, rdx
+    syscall
+    ; now random buf has 16 random bytes
+
+    pop rsi
+    pop rdi
+
+    test rax, rax
+    js .random_ret_failure
+
+    mov rax, qword [random_buf]
+
+    push rsi
+    push rdi
+
+    sub rsi, rdi
+    mov rdi, rax
+    call mod ; random % (upper - lower) 
+
+    pop rdi
+    pop rsi
+
+    test rax, rax
+    js .random_ret_failure
+    
+    push r9
+    mov r9, rax
+    mov rax, rdi
+    add rax, r9
+    pop r9
+
+    ret
+
+
+.random_ret_failure:
+    mov rax, -1
+    ret
+
+
+
+
 section .data
     pi dq 3.142
     hundred dq 100.0
@@ -275,3 +332,6 @@ section .data
     three_factorial dq 6.0
     five_factorial dq 120.0
     seven_factorial dq 5040.0
+
+section .bss
+    random_buf db 17

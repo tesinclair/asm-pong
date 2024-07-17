@@ -10,6 +10,8 @@ extern mod
 %define SCREEN_WIDTH 3200
 %define SCREEN_HEIGHT 2160
 %define USABLE_HEIGHT 2160 - 165
+%define BALL_RADIUS 30
+%define RECT_HEIGHT 300
 
 ; @params:
 ;       - rdi: x_pos buffer [read/write]
@@ -47,9 +49,15 @@ move_ball:
 
 .no_set_max_y:
     add rbx, r9
+    push rbx
+    add rbx, BALL_RADIUS
     cmp rbx, USABLE_HEIGHT
+    pop rbx
     jge .calc_x
-    cmp rbx, 0
+    push rbx
+    sub rbx, BALL_RADIUS
+    test rbx, rbx
+    pop rbx
     js .calc_x
 
     mov [rsi], rbx
@@ -75,9 +83,15 @@ move_ball:
     mov r9, MOVE_SPEED
 
 .no_set_max_x:
+    push r10
+    add r10, BALL_RADIUS
     cmp r10, SCREEN_WIDTH
+    pop r10
     jg .move_ball_ret
+    push r10
+    sub r10, BALL_RADIUS
     cmp r10, 0
+    pop r10
     js .move_ball_ret
 
     mov [rdi], r10
@@ -124,8 +138,11 @@ move_ai:
 
 .move_ai_down:
     add rbx, MOVE_SPEED
+    push rbx
+    add rbx, RECT_HEIGHT
     cmp rbx, USABLE_HEIGHT
-    jg .move_ai_return ; exit if at bottom
+    pop rbx
+    jge .move_ai_return ; exit if at bottom
 
     mov [rdi], rbx
     jmp .move_ai_return

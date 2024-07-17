@@ -45,6 +45,8 @@ extern clear_screen
 ; libphysics
 extern move_ai
 extern move_ball
+; libcollision
+extern collide
 
 
 
@@ -121,6 +123,13 @@ game_loop:
     mov rdi, [fb_mmap] ; frame buf base addr
     call clear_screen
 
+    mov rdi, [rect_1_y]
+    mov rsi, [rect_2_y]
+    mov rdx, [ball_x]
+    mov r10, [ball_y]
+    mov r8, ball_theta
+    call collide
+
     ; rect 1
     mov rdi, 1 ; xpos
     mov rsi, [rect_1_y] ;ypos
@@ -131,11 +140,6 @@ game_loop:
 
     test rax, rax
     js exit_failure
-
-    ; Ai follow
-    mov rdi, rect_2_y
-    mov rsi, ball_y
-    call move_ai
 
     ; rect 2
     mov rdi, 3099 ; xpos
@@ -166,8 +170,13 @@ game_loop:
 
     test rax, rax
     js exit_failure
+    
+    ; Ai follow
+    mov rdi, rect_2_y
+    mov rsi, ball_y
+    call move_ai ; update ai after everthing has moved
 
-    mov rsi, 15
+    mov rsi, 10
     call sleep
 
     ; termios
@@ -217,10 +226,16 @@ game_loop:
 
 unmap:
     ; unmap_fb
+    push rdi
+    push rsi
+
     mov rax, 11
     mov rdi, [fb_mmap]
     mov rsi, WIDTH * HEIGHT * BYTES_PER_PIXEL
     syscall
+
+    pop rsi
+    pop rdi
 
     ret
 
