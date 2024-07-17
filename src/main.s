@@ -47,8 +47,8 @@ extern move_ai
 extern move_ball
 ; libcollision
 extern collide
-
-
+; libmath
+extern random
 
 section .text
 _start:
@@ -116,10 +116,12 @@ _start:
     mov [fb_mmap], rax
 
     ; start angle for ball
-    mov qword [ball_theta], 0
+    mov rdi, 0
+    mov rsi, 360
+    call random
+    mov qword [ball_theta], rax
 
 game_loop:
-
     mov rdi, [fb_mmap] ; frame buf base addr
     call clear_screen
 
@@ -129,6 +131,14 @@ game_loop:
     mov r10, [ball_y]
     mov r8, ball_theta
     call collide
+
+    test rax, rax
+    js exit_failure
+
+    cmp rax, 0 ; point to ai
+    je ai_scores
+    cmp rax, 1 ; point to player
+    je player_scores
 
     ; rect 1
     mov rdi, 1 ; xpos
@@ -224,6 +234,43 @@ game_loop:
 
     jmp game_loop
 
+ai_scores:
+    push rdi
+    mov rdi, [ai_score]
+    inc rdi
+    mov qword [ai_score], rdi
+
+    call _reset
+
+    jmp game_loop
+player_scores:
+    push rdi
+    mov rdi, [player_score]
+    inc rdi
+    mov qword [player_score], rdi
+
+    call _reset
+
+    jmp game_loop
+
+_reset:
+    mov qword [ball_x], WIDTH / 2
+    mov qword [ball_y], HEIGHT / 2
+    mov qword [rect_1_y], HEIGHT / 2
+    mov qword [rect_2_y], HEIGHT / 2
+     
+    push rdi
+    push rsi
+    ; start angle for ball
+    mov rdi, 0
+    mov rsi, 360
+    call random
+    mov qword [ball_theta], rax
+    pop rsi
+    pop rdi
+
+    ret
+    
 unmap:
     ; unmap_fb
     push rdi
@@ -297,6 +344,8 @@ section .data
     ball_y dq HEIGHT / 2
     ball_x dq WIDTH / 2
     ball_theta dq 1
+    player_score dq 0
+    ai_score dq 0
 
 section .bss
     fb0_fd resq 1

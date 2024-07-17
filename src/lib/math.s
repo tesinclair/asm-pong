@@ -202,7 +202,7 @@ cvt_theta_to_rads:
 ;       - rax: mapped theta
 map_theta:
     ; alg:
-    ;   (theta + 180) % 360 - 180 ;; get withing -180, 180
+    ;   (theta + 180) % 360 - 180 ;; get within -180, 180
     ;   if theta > 90:
     ;       theta = 180 - theta
     ;   if theta < -90:
@@ -277,11 +277,30 @@ mod:
 ; @returns:
 ;       - rax: random number
 random:
+    push rbx
+    push rdi
+    ; sysbrk
+    mov rax, 12
+    xor rdi, rdi
+    syscall
+
+    mov rbx, rax
+
+    add rax, 17
+    mov rdi, rax
+    mov rax, 12
+    syscall
+
+    pop rdi
+
+    cmp rax, rbx
+    je .random_no_memory_failure
+
     push rdi
     push rsi
     ; sys_getrandom
     mov rax, 318
-    mov rdi, random_buf
+    mov rdi, rbx
     mov rsi, 16
     xor rdx, rdx
     syscall
@@ -293,15 +312,18 @@ random:
     test rax, rax
     js .random_ret_failure
 
-    mov rax, qword [random_buf]
+    mov rax, qword [rbx]
 
     push rsi
     push rdi
+    push rdx
 
     sub rsi, rdi
     mov rdi, rax
+    mov rdx, rsi
     call mod ; random % (upper - lower) 
 
+    pop rdx
     pop rdi
     pop rsi
 
@@ -314,15 +336,25 @@ random:
     add rax, r9
     pop r9
 
+    pop rbx
+
     ret
 
-
 .random_ret_failure:
+    push rdi 
+    mov rdi, rbx
+    mov rax, 12
+    syscall ; deallocate
+
+    pop rdi
+    pop rbx
     mov rax, -1
     ret
 
-
-
+.random_no_memory_failure:
+    pop rbx
+    mov rax, -1
+    ret
 
 section .data
     pi dq 3.142
@@ -332,6 +364,3 @@ section .data
     three_factorial dq 6.0
     five_factorial dq 120.0
     seven_factorial dq 5040.0
-
-section .bss
-    random_buf db 17
