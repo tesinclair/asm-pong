@@ -105,19 +105,16 @@ round_2_decimal_places:
 ; @returns:
 ;       - xmm0: result to 2 decimal places
 cos:
-    ; taking advantage of cos(x) = sin(pi/2 - x)
+    ; taking advantage of cos(x) = sin(90 - x)
 
     push r9
 
-    movsd xmm1, [pi] 
-    divsd xmm1, [two] ; pi/2
-
-    cvtsd2si r9, xmm1
-    sub r9, rdi  ; pi/2 - x
+    mov r9, 90
+    sub r9, rdi  ; 90 - x
 
     push rdi
     mov rdi, r9
-    call sin ; sin(pi/2 - x)
+    call sin ; sin(90 - x)
 
     pop rdi
     pop r9
@@ -137,33 +134,36 @@ sin:
     push r9
 
     call map_theta
+    push rdi
+    mov rdi, rax
     call cvt_theta_to_rads ; returns to xmm0
+    pop rdi
 
-    mov r9, rdi ; theta
-    imul r9, rdi
-    imul r9, rdi ; x^3
-    cvtsi2sd xmm0, r9
+    movsd xmm3, xmm0 ; keep theta in rads safe
+    mulsd xmm0, xmm3
+    mulsd xmm0, xmm3 ; x^3 
+    movsd xmm4, xmm0 ; comes in handy for x^5, x^7
     movsd xmm1, [three_factorial]
     divsd xmm0, xmm1 ; x^3/3!
 
-    imul r9, rdi
-    imul r9, rdi ; x^5
-    cvtsi2sd xmm1, r9
+    movsd xmm1, xmm4 ; x^3
+    mulsd xmm1, xmm3
+    mulsd xmm1, xmm3 ; x^5
+    movsd xmm4, xmm1
     movsd xmm2, [five_factorial]
     divsd xmm1, xmm2 ; x^5/5!
 
     addsd xmm0, xmm1 ; x^3/3! + x^5/5!
 
-    imul r9, rdi
-    imul r9, rdi ; x^7
-    cvtsi2sd xmm1, r9
+    movsd xmm1, xmm4 ; x^5
+    mulsd xmm1, xmm3
+    mulsd xmm1, xmm3 ; x^7
     movsd xmm2, [seven_factorial]
     divsd xmm1, xmm2 ; x^7/7!
 
     addsd xmm0, xmm1 ; x^3/3! + x^5/5! + x^7/7!
 
-    cvtsi2sd xmm1, rdi
-    addsd xmm0, xmm1 ; x + x^3/3! + x^5/5! + x^7/7!
+    addsd xmm0, xmm3 ; x + x^3/3! + x^5/5! + x^7/7!
 
     call round_2_decimal_places
 
@@ -209,6 +209,7 @@ map_theta:
     ;       theta = -180 - angle
 
     push rdi
+    push rdx
 
     add rdi, 180 
     mov rdx, 360
@@ -221,6 +222,7 @@ map_theta:
     cmp rax, -90
     jl .theta_less_m_90
 
+    pop rdx
     pop rdi
 
     ret
@@ -230,6 +232,7 @@ map_theta:
     sub rdi, rax
     mov rax, rdi
 
+    pop rdx
     pop rdi
     ret
 
@@ -238,6 +241,7 @@ map_theta:
     sub rdi, rax
     mov rax, rdi
 
+    pop rdx
     pop rdi
     ret
 
@@ -253,17 +257,55 @@ mod:
     ;   x % y = x - y(x // y)
 
     push rsi
+    push r9 ; x
+    push r8 ; y
+    push r10
+    push r11
 
-    mov rax, rdi ; x
-    mov rsi, rdx ; y
+    mov r9, rdi
+    mov r8, rdx
+
+.mod_test_x_:
+    xor r10, r10
+    test r9, r9 ; check not negative
+    jns .mod_test_y
+    neg r9 ; make positive
+    mov r10, 1
+
+.mod_test_y:
+    xor r11, r11
+    test r8, r8 ; check not negative
+    jns .mod_continue
+    neg r9 ; make positive
+    mov r11, 1
+
+.mod_continue:
+    push rdx
+    mov rax, r9 ; x
+    mov rsi, r8 ; y
     xor rdx, rdx
     div rsi ; x // y
-    mov rdx, rsi
+    pop rdx
 
-    imul rax, rdx ; y(x // y)
-    sub rdi, rax
-    mov rax, rdi
+    imul rax, r8 ; y(x // y)
+    sub r9, rax ; x - y(x // y)
 
+    xor r11, r10
+    jz .mod_not_neg
+    neg r9
+
+.mod_make_pos:
+    add r9, r8 ; if negative add y until positive
+    test r9, r9
+    js .mod_make_pos
+
+.mod_not_neg:
+    mov rax, r9
+
+    pop r11
+    pop r10
+    pop r8
+    pop r9
     pop rsi
 
     ret
@@ -286,7 +328,7 @@ random:
 
     mov rbx, rax
 
-    add rax, 17
+    add rax, 8
     mov rdi, rax
     mov rax, 12
     syscall
@@ -301,7 +343,7 @@ random:
     ; sys_getrandom
     mov rax, 318
     mov rdi, rbx
-    mov rsi, 16
+    mov rsi, 8
     xor rdx, rdx
     syscall
     ; now random buf has 16 random bytes
@@ -312,7 +354,8 @@ random:
     test rax, rax
     js .random_ret_failure
 
-    mov rax, qword [rbx]
+    xor rax, rax
+    mov eax, [rbx]
 
     push rsi
     push rdi

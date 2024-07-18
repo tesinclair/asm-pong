@@ -119,9 +119,9 @@ move_ball:
 move_ai:
     push rbx
     mov rbx, [rdi]
-    cmp rbx, rsi
-    jg .move_ai_up ; if y_pos < ball_y_pos
+    cmp rbx, rsi ; cmp y_pos, ball_y_pos
     jl .move_ai_down ; if y_pos < ball_y_pos
+    jg .move_ai_up ; if y_pos > ball_y_pos
     
 .move_ai_return:
     pop rbx

@@ -119,6 +119,8 @@ _start:
     mov rdi, 0
     mov rsi, 360
     call random
+    test rax, rax
+    js exit_failure ; result should not be negative
     mov qword [ball_theta], rax
 
 game_loop:
