@@ -6,6 +6,13 @@
 %define USABLE_SCREEN_HEIGHT 1995
 %define BYTES_PP 4
 
+%define PLAYER_SCORE_X 1000
+%define AI_SCORE_X 2200
+%define SCORE_Y 200
+%define FONT_SIZE 20
+%define NUM_HEIGHT 100
+%define NUM_LENGTH 40
+
 ; math
 extern sqrt
 
@@ -195,7 +202,7 @@ draw_line:
     pop r14
     pop rdi
     ret
-
+    
 ; @params:
 ;       - rdi: frame buf base addr
 

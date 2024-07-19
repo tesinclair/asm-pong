@@ -130,6 +130,13 @@ game_loop:
     mov rdi, [fb_mmap] ; frame buf base addr
     call clear_screen
 
+    mov rdi, [player_score]
+    mov rsi, [ai_score]
+    cmp rdi, 10
+    jge player_one_wins
+    cmp rsi, 10
+    jge ai_wins
+
     mov rdi, [rect_1_y]
     mov rsi, [rect_2_y]
     mov rdx, [ball_x]
@@ -257,6 +264,11 @@ player_scores:
     call _reset
 
     jmp game_loop
+
+player_wins:
+    jmp exit_success
+ai_wins:
+    jmp exit_success
 
 _reset:
     mov qword [ball_x], WIDTH / 2
