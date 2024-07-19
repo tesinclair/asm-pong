@@ -1,5 +1,5 @@
 C=nasm
-C_FLAGS= -felf64 -g
+C_FLAGS= -felf64 
 L_FLAGS= -lc -dynamic-linker /lib64/ld-linux-x86-64.so.2
 
 TARGET = main

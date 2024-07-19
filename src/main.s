@@ -1,15 +1,3 @@
-; TODO: 
-;   - File i/o with /dev/fb0 ✅
-;   - Basic Pong Shapes ✅
-;   - User Input ✅
-;   - Refactor to modular ✅
-;   - Ball physics ✅
-;   - AI ball follow ✅
-;   - sin and cos
-;   - collision ; random direction whenever colliding
-;   - Scores
-
-
 ; NOTE: angles are anticlockwise. Don't ask me why
 
 %define WIDTH 3200
@@ -133,7 +121,7 @@ game_loop:
     mov rdi, [player_score]
     mov rsi, [ai_score]
     cmp rdi, 10
-    jge player_one_wins
+    jge player_wins
     cmp rsi, 10
     jge ai_wins
 
