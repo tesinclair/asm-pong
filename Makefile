@@ -10,13 +10,9 @@ OBJECTS = $(SOURCES:%.s=%.o)
  
 all: build
 
-run: build
-	echo "\n\n"
-	build/a.out
-
 build: clean $(TARGET)
-	mkdir build/
-	mv $(OBJECTS) a.out build/
+	@mkdir build/
+	@mv $(OBJECTS) a.out build/
 
 $(TARGET): $(OBJECTS)
 	ld $^ $(L_FLAGS)
@@ -29,4 +25,4 @@ $(TARGET): $(OBJECTS)
 	$(C) $(C_FLAGS) src/lib/collision.s
 
 clean:
-	rm -rf build
+	@rm -rf build

@@ -9,6 +9,9 @@
 ;   - collision ; random direction whenever colliding
 ;   - Scores
 
+
+; NOTE: angles are anticlockwise. Don't ask me why
+
 %define WIDTH 3200
 %define HEIGHT 2160
 %define USABLE_HEIGHT 2160 - 165
@@ -185,7 +188,7 @@ game_loop:
     
     ; Ai follow
     mov rdi, rect_2_y
-    mov rsi, ball_y
+    mov rsi, [ball_y]
     call move_ai ; update ai after everthing has moved
 
     mov rsi, 10

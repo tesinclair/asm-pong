@@ -155,7 +155,7 @@ collide:
     ret
 
 ; returns angle between 15 and 165
-.get_angle_left:
+.get_angle_right:
     push rdi
     push rsi
     
@@ -172,7 +172,7 @@ collide:
     jmp .collision_ret
 
 ; returns angle between 195 and 345
-.get_angle_right:
+.get_angle_left:
     push rdi
     push rsi
     
@@ -189,7 +189,7 @@ collide:
     jmp .collision_ret
 
 ; returns angle between 105 and 245
-.get_angle_top:
+.get_angle_bottom:
     push rdi
     push rsi
     
@@ -206,7 +206,7 @@ collide:
     jmp .collision_ret
 
 ; returns angle between 285-345, 15-75
-.get_angle_bottom:
+.get_angle_top:
     push rdi
     push rsi
     
@@ -216,14 +216,14 @@ collide:
     test rax, rax
     jz .bottom_left
 
-.bottom_right:
+.bottom_left:
     mov rdi, 15
     mov rsi, 75
     call random
 
     jmp .angle_bottom_fin
 
-.bottom_left:
+.bottom_right:
     mov rdi, 285
     mov rsi, 345
     call random

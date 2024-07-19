@@ -56,9 +56,9 @@ move_ball:
     jge .calc_x
     push rbx
     sub rbx, BALL_RADIUS
-    test rbx, rbx
+    cmp rbx, 1
     pop rbx
-    js .calc_x
+    jle .calc_x
 
     mov [rsi], rbx
 
@@ -118,8 +118,12 @@ move_ball:
 ;         in the direction of ball
 move_ai:
     push rbx
+    push r8
+    mov r8, RECT_HEIGHT / 2
+    add r8, [rdi]
     mov rbx, [rdi]
-    cmp rbx, rsi ; cmp y_pos, ball_y_pos
+    cmp r8, rsi ; cmp y_pos, ball_y_pos
+    pop r8
     jl .move_ai_down ; if y_pos < ball_y_pos
     jg .move_ai_up ; if y_pos > ball_y_pos
     
