@@ -9,7 +9,7 @@
 %define RECT_HEIGHT 300
 %define BALL_RADIUS 30
 
-%define MOVE_SPEED 7
+%define MOVE_SPEED 6
 
 ; c_lflags for termios
 %define ECHO 8
@@ -186,7 +186,7 @@ game_loop:
     mov rsi, [ball_y]
     call move_ai ; update ai after everthing has moved
 
-    mov rsi, 10
+    mov rsi, 5
     call sleep
 
     ; termios

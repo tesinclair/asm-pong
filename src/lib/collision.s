@@ -104,7 +104,7 @@ collide:
     push r9
     mov r9, r10
     sub r9, BALL_RADIUS
-    cmp r9, 0
+    cmp r9, 10 ; because of offset in ball_height_max_y
     pop r9
     jg .test_ball_bottom_collision
 

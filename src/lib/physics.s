@@ -6,7 +6,7 @@ extern sin
 extern cos
 extern mod
 
-%define MOVE_SPEED 4
+%define MOVE_SPEED 2
 %define SCREEN_WIDTH 3200
 %define SCREEN_HEIGHT 2160
 %define USABLE_HEIGHT 2160 - 165
@@ -56,7 +56,7 @@ move_ball:
     jge .calc_x
     push rbx
     sub rbx, BALL_RADIUS
-    cmp rbx, 1
+    cmp rbx, 10 ; seems to be an issue with the highest area...
     pop rbx
     jle .calc_x
 
@@ -152,4 +152,4 @@ move_ai:
     jmp .move_ai_return
     
 section .data
-    move_speed_f dq 4.0
+    move_speed_f dq 2.0
