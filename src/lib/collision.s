@@ -1,8 +1,8 @@
 %define SCREEN_WIDTH 3200
-%define SCREEN_HEIGHT 2160 - 165
+%define SCREEN_HEIGHT 1995
 %define RECT_HEIGHT 300
 %define RECT_WIDTH 100
-%define ERROR_MARGIN 3
+%define ERROR_MARGIN 11
 %define BALL_RADIUS 30 + ERROR_MARGIN
 
 %define LEFT_WALL 0
@@ -104,7 +104,7 @@ collide:
     push r9
     mov r9, r10
     sub r9, BALL_RADIUS
-    cmp r9, 10 ; because of offset in ball_height_max_y
+    cmp r9, 11 ; because of offset in ball_height_max_y
     pop r9
     jg .test_ball_bottom_collision
 
@@ -126,7 +126,7 @@ collide:
     push r9
     mov r9, rdx
     sub r9, BALL_RADIUS
-    cmp r9, 1
+    cmp r9, 5
     pop r9
     jg .test_ball_left_wall_collision
 
@@ -138,7 +138,7 @@ collide:
     push r9
     mov r9, rdx
     add r9, BALL_RADIUS
-    cmp r9, SCREEN_WIDTH
+    cmp r9, SCREEN_WIDTH - 5
     pop r9
     jle .no_collision_ret
 
@@ -216,14 +216,14 @@ collide:
     test rax, rax
     jz .bottom_left
 
-.bottom_left:
+.bottom_right:
     mov rdi, 15
     mov rsi, 75
     call random
 
     jmp .angle_bottom_fin
 
-.bottom_right:
+.bottom_left:
     mov rdi, 285
     mov rsi, 345
     call random

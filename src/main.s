@@ -9,7 +9,7 @@
 %define RECT_HEIGHT 300
 %define BALL_RADIUS 30
 
-%define MOVE_SPEED 4
+%define MOVE_SPEED 10
 
 ; c_lflags for termios
 %define ECHO 8
@@ -239,7 +239,10 @@ game_loop:
 .handle_player_down:
     mov rax, [rect_1_y]
     add rax, MOVE_SPEED
-    cmp rax, USABLE_HEIGHT - RECT_HEIGHT
+    push rax
+    add rax, RECT_HEIGHT
+    cmp rax, USABLE_HEIGHT
+    pop rax
     jg game_loop ; if out of bounds, ignore
 
     mov [rect_1_y], rax
@@ -249,8 +252,9 @@ game_loop:
 .handle_player_up:
     mov rax, [rect_1_y]
     sub rax, MOVE_SPEED
+    cmp rax, 1
     test rax, rax
-    js game_loop ; if out of bounds, ignore
+    jle game_loop ; if out of bounds, ignore
 
     mov [rect_1_y], rax
 
