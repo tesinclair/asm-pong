@@ -2,8 +2,8 @@
 
 %define WIDTH 3200
 %define HEIGHT 2160
-%define USABLE_HEIGHT 2160 - 165
-%define BYTES_PER_PIXEL 4 ; 32 bit depth
+%define USABLE_HEIGHT 1995
+%define PIXEL_DEPTH 4 ; 32 bit depth
 
 %define RECT_WIDTH 100
 %define RECT_HEIGHT 300
@@ -95,7 +95,7 @@ _start:
      ; sys_mmap
     mov rax, 9
     xor rdi, rdi
-    mov rsi, WIDTH * HEIGHT * BYTES_PER_PIXEL
+    mov rsi, WIDTH * HEIGHT * PIXEL_DEPTH
     mov rdx, 3
     mov r10, 1
     mov r8, [fb0_fd]
@@ -106,6 +106,22 @@ _start:
     js exit_failure
     mov [fb_mmap], rax
 
+    ; second buffer
+    mov rax, 12
+    xor rdi, rdi ; get current break
+    syscall
+
+    mov qword [fb_double_buf], rax
+
+    add rax, WIDTH * HEIGHT * PIXEL_DEPTH
+    mov rdi, rax
+    mov rax, 12
+    syscall ; new break
+    
+    mov rdi, [fb_double_buf]
+    cmp rdi, rax
+    je exit_failure
+
     ; start angle for ball
     mov rdi, 0
     mov rsi, 360
@@ -115,7 +131,7 @@ _start:
     mov qword [ball_theta], rax
 
 game_loop:
-    mov rdi, [fb_mmap] ; frame buf base addr
+    mov rdi, [fb_double_buf] ; frame buf base addr
     call clear_screen
 
     mov rdi, [player_score]
@@ -143,7 +159,7 @@ game_loop:
     ; rect 1
     mov rdi, 1 ; xpos
     mov rsi, [rect_1_y] ;ypos
-    mov rdx, [fb_mmap] ; frame buf base addr
+    mov rdx, [fb_double_buf] ; frame buf base addr
     mov rcx, RECT_HEIGHT
     mov r10, RECT_WIDTH
     call draw_rectangle
@@ -154,7 +170,7 @@ game_loop:
     ; rect 2
     mov rdi, 3099 ; xpos
     mov rsi, [rect_2_y] ; ypos
-    mov rdx, [fb_mmap] ; frame buf base addr
+    mov rdx, [fb_double_buf] ; frame buf base addr
     mov rcx, RECT_HEIGHT
     mov r10, RECT_WIDTH
     call draw_rectangle
@@ -174,7 +190,7 @@ game_loop:
     ; ball
     mov rdi, [ball_x] ; xpos
     mov rsi, [ball_y] ; ypos
-    mov rdx, [fb_mmap] ; frame buf base addr
+    mov rdx, [fb_double_buf] ; frame buf base addr
     mov rcx, BALL_RADIUS
     call draw_ball
 
@@ -185,6 +201,12 @@ game_loop:
     mov rdi, rect_2_y
     mov rsi, [ball_y]
     call move_ai ; update ai after everthing has moved
+
+    ; write to fb0
+    mov rcx, WIDTH * USABLE_HEIGHT
+    mov rsi, [fb_double_buf]
+    mov rdi, [fb_mmap]
+    rep movsd
 
     mov rsi, 5
     call sleep
@@ -283,7 +305,7 @@ unmap:
 
     mov rax, 11
     mov rdi, [fb_mmap]
-    mov rsi, WIDTH * HEIGHT * BYTES_PER_PIXEL
+    mov rsi, WIDTH * HEIGHT * PIXEL_DEPTH
     syscall
 
     pop rsi
@@ -324,7 +346,13 @@ restore_term:
 
     ret
 
+dealloc_second_buf:
+    mov rax, 12
+    mov rdi, [fb_double_buf]
+    syscall
+
 exit_failure:
+    call dealloc_second_buf
     call unmap
     call restore_term
     call close_file
@@ -333,6 +361,7 @@ exit_failure:
     syscall
 
 exit_success:
+    call dealloc_second_buf
     call unmap
     call restore_term
     call close_file
@@ -357,6 +386,7 @@ section .bss
     fb_mmap resq 1 
     offset resq 1
     timespec resb 16
+    fb_double_buf resq 1
 
     ; termios
     term_conf resb 60

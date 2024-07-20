@@ -3,7 +3,7 @@
 
 %define SCREEN_HEIGHT 2160
 %define SCREEN_WIDTH 3200
-%define USABLE_SCREEN_HEIGHT 1995
+%define USABLE_SCREEN_HEIGHT 2160 - 165
 %define BYTES_PP 4
 
 %define PLAYER_SCORE_X 1000
@@ -219,4 +219,3 @@ clear_screen:
 
     pop rcx
     ret
-    
