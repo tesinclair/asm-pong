@@ -6,7 +6,7 @@ extern sin
 extern cos
 extern mod
 
-%define MOVE_SPEED 2
+%define MOVE_SPEED 1
 %define SCREEN_WIDTH 3200
 %define SCREEN_HEIGHT 2160
 %define USABLE_HEIGHT 2160 - 165
@@ -152,4 +152,4 @@ move_ai:
     jmp .move_ai_return
     
 section .data
-    move_speed_f dq 2.0
+    move_speed_f dq 1.0

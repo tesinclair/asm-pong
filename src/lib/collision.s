@@ -2,7 +2,7 @@
 %define SCREEN_HEIGHT 2160 - 165
 %define RECT_HEIGHT 300
 %define RECT_WIDTH 100
-%define ERROR_MARGIN 5
+%define ERROR_MARGIN 3
 %define BALL_RADIUS 30 + ERROR_MARGIN
 
 %define LEFT_WALL 0

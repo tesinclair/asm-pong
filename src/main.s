@@ -9,7 +9,7 @@
 %define RECT_HEIGHT 300
 %define BALL_RADIUS 30
 
-%define MOVE_SPEED 6
+%define MOVE_SPEED 4
 
 ; c_lflags for termios
 %define ECHO 8
@@ -208,8 +208,8 @@ game_loop:
     mov rdi, [fb_mmap]
     rep movsd
 
-    mov rsi, 5
-    call sleep
+    mov rsi, 1
+;    call sleep
 
     ; termios
     xor rdi, rdi
@@ -313,9 +313,11 @@ unmap:
 
     ret
 
-; @params: takes a time in millisecond in rsi
+; @params: takes a time in 1/10000 millisecond in rsi
+;           - that is, if 1 is entered,
+;           - it is regesteres as 1/10000 of a millisecofn
 sleep:
-    imul rsi, 1000000 ; get time in nanoseconds
+    imul rsi, 100 ; get time in nanoseconds
     mov rax, 0
     mov [timespec], rax
     mov [timespec + 8], rsi
