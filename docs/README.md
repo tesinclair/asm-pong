@@ -5,9 +5,10 @@ A game of Pong written entirely in assembly, made by drawing each pixel to the f
 ## Installation
 
 Installation is actually pretty simple, but you need to be on a specific type of machine:
-*Runinng x86_64 architecture
-*Has /dev/fb0
-*Allows TTY (text only terminals)
+
+  * Runinng x86_64 architecture
+  * Has /dev/fb0
+  * Allows TTY (text only terminals)
 
 If you have all of these, then you can clone this repo into any directory you want:
 ```bash
