@@ -36,4 +36,6 @@ The gameplay is quite simple, there is an ai which chases the ball, and you can 
 
 ### Future
 
-I intend to - when I know more about this whole thing - fix some of the jitteryness, and do some bug fixes, I also want to add scores, but that is long.
+The list of things to do in the future is:
+* Figure out why the movement is so jittery
+* Add score rendering
