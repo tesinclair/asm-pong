@@ -2,6 +2,8 @@
 
 A game of Pong written entirely in assembly, made by drawing each pixel to the frame buffer - /dev/fb0.
 
+![Demo](assets/pong.gif)
+
 ## Installation
 
 Installation is actually pretty simple, but you need to be on a specific type of machine:
